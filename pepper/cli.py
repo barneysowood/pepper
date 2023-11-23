@@ -15,11 +15,8 @@ import time
 
 # Import Pepper Libraries
 import pepper
-from pepper.exceptions import (
-    PepperArgumentsException,
-    PepperAuthException,
-    PepperException,
-)
+from pepper.exceptions import (PepperArgumentsException, PepperAuthException,
+                               PepperException)
 
 try:
     # Python 3
@@ -144,6 +141,8 @@ class PepperCli(object):
         if len(toggled_options) > 1:
             s = repr(toggled_options).strip("[]")
             self.parser.error("Options %s are mutually exclusive" % s)
+        elif toggled_options and self.options.retcode_passthrough:
+            self.parser.error("Options %s and retcode_passthrough are mutually exclusive" % toggled_options[0])
 
         if toggled_options and not (
             self.options.client.startswith("local")
@@ -154,6 +153,13 @@ class PepperCli(object):
                 "Option %s only works with local, local_* or ssh clients"
                 % toggled_options[0]
             )
+
+        if self.options.retcode_passthrough and (
+            self.options.client.startswith("local")
+            or self.options.client == "ssh"
+            or self.options.batch
+        ):
+            self.options.fail_any = True
 
     def add_globalopts(self):
         '''
@@ -199,6 +205,14 @@ class PepperCli(object):
                 Return a failure exit code if not all minions respond. This option
                 requires the authenticated user have access to run the
                 `jobs.list_jobs` runner function.
+            '''),
+        )
+
+        optgroup.add_option(
+            '--retcode-passthrough', action='store_true', dest='retcode_passthrough', default=False,
+            help=textwrap.dedent('''
+                Return the job retcode as exit code. For local, local_* or ssh
+                clients this is equivilent to `--fail-any`.
             '''),
         )
 
