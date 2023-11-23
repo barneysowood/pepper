@@ -3,6 +3,7 @@ A CLI interface to a remote salt-api instance
 
 '''
 from __future__ import print_function
+
 import getpass
 import json
 import logging
@@ -15,11 +16,10 @@ import time
 # Import Pepper Libraries
 import pepper
 from pepper.exceptions import (
-    PepperAuthException,
     PepperArgumentsException,
+    PepperAuthException,
     PepperException,
 )
-
 
 try:
     # Python 3
@@ -144,6 +144,16 @@ class PepperCli(object):
         if len(toggled_options) > 1:
             s = repr(toggled_options).strip("[]")
             self.parser.error("Options %s are mutually exclusive" % s)
+
+        if toggled_options and not (
+            self.options.client.startswith("local")
+            or self.options.client == "ssh"
+            or self.options.batch
+        ):
+            self.parser.error(
+                "Option %s only works with local, local_* or ssh clients"
+                % toggled_options[0]
+            )
 
     def add_globalopts(self):
         '''
